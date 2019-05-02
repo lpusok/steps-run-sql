@@ -3,13 +3,6 @@ default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 workflows:
   test:
-    envs:
-    - HOST: "localhost"
-    - PORT: "5432"
-    - USERNAME: "lpusok"
-    - PASSWORD: ""
-    - DBNAME: "template1"
-    - SCRIPTS_REPO: "git@github.com:lpusok/hackathon-data-scripts.git"
     steps:
     - script:
         inputs:
@@ -25,4 +18,5 @@ workflows:
         - db_username: $USERNAME
         - db_password: $PASSWORD
         - db_name: $DBNAME
+        - db_sslmode: $DBSSLMODE
         - scripts_repository: $SCRIPTS_REPO

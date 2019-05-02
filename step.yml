@@ -46,6 +46,12 @@ inputs:
       description: |
         DB name
       is_required: true
+  - db_sslmode:
+    opts:
+      title: "DB sslmode"
+      description: |
+        DB sslmode
+      is_required: true
   - scripts_repository:
     opts:
       title: "Data scripts repository"

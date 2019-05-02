@@ -14,16 +14,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// const (
-// 	host     = "localhost"
-// 	port     = 5432
-// 	user     = "lpusok"
-// 	password = ""
-// 	dbname   = "template1"
-
-// 	scriptsRepo = "git@github.com:lpusok/hackathon-data-scripts.git"
-// )
-
 func cloneRepo(scriptsRepository string) (string, error) {
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -53,12 +43,14 @@ type dbInfo struct {
 	username     string
 	password     string
 	databaseName string
+	sslmode      string
 }
 
 func connectToDB(dbInfo dbInfo) (*sql.DB, error) {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		dbInfo.host, dbInfo.port, dbInfo.username, dbInfo.password, dbInfo.databaseName)
+		"password=%s dbname=%s sslmode=%s",
+		dbInfo.host, dbInfo.port, dbInfo.username,
+		dbInfo.password, dbInfo.databaseName, dbInfo.sslmode)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		return nil, err
@@ -118,6 +110,7 @@ type config struct {
 	DbUsername        string          `env:"db_username,required"`
 	DbPassword        stepconf.Secret `env:"db_password"`
 	DbName            string          `env:"db_name,required"`
+	DbSSLmode         string          `env:"db_sslmode,required"`
 	ScriptsRepository string          `env:"scripts_repository,required"`
 }
 
@@ -155,6 +148,7 @@ func main() {
 		port:         cfg.DbPort,
 		username:     cfg.DbUsername,
 		password:     string(cfg.DbPassword),
+		sslmode:      cfg.DbSSLmode,
 		databaseName: cfg.DbName,
 	})
 	if err != nil {
