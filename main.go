@@ -129,13 +129,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	scripts := []string{}
+	scriptFiles := []string{}
 	for _, entry := range entries {
 		if !entry.IsDir() && path.Ext(strings.ToLower(entry.Name())) == ".sql" {
-			scripts = append(scripts, path.Join(scripsDir, entry.Name()))
+			scriptFiles = append(scriptFiles, path.Join(scripsDir, entry.Name()))
 		}
 	}
-	log.Printf("Scripts to run: %s", scripts)
+	log.Printf("Script files: %s", scriptFiles)
 
 	// Connect to DB
 	db, err := connectToDB(dbInfo{
@@ -156,31 +156,43 @@ func main() {
 		}
 	}()
 
+	type script struct {
+		path    string
+		content string
+	}
+
+	scripts := make([]script, len(scriptFiles))
+	for i, path := range scriptFiles {
+		file, err := os.Open(path)
+		if err != nil {
+			panic(fmt.Errorf("failed to open file: %s, error: %s", path, err))
+		}
+
+		contents, err := ioutil.ReadAll(file)
+		if err != nil {
+			panic(fmt.Errorf("failed to read content, file: %s, error: %s", path, err))
+		}
+
+		scripts[i] = script{
+			path:    path,
+			content: string(contents),
+		}
+	}
+
 	failure := false
 	for _, script := range scripts {
 		fmt.Println()
-		log.Infof("Preparing to run script: %s", path.Base(script))
+		log.Infof("Preparing to run script: %s", path.Base(script.path))
+		log.Printf("Script content:\n%s", script.content)
 
-		file, err := os.Open(script)
-		if err != nil {
-			panic(fmt.Errorf("failed to open file: %s, error: %s", script, err))
-		}
-
-		sqlStatements, err := ioutil.ReadAll(file)
-		if err != nil {
-			panic(fmt.Errorf("failed to read content, file: %s, error: %s", script, err))
-		}
-		log.Printf("Script content:\n%s", sqlStatements)
-
-		err = runSQLStatement(db, string(sqlStatements))
+		err = runSQLStatement(db, script.content)
 		if err != nil {
 			failure = true
-			log.Warnf("failed to run script: %s, error: %s", script, err)
+			log.Warnf("failed to execute, error: %s", err)
 		}
 
-		log.Infof("Done with script: %s", path.Base(script))
+		log.Infof("Done with script: %s", path.Base(script.path))
 	}
-
 	if failure {
 		panic("One or more scripts failed.")
 	}
