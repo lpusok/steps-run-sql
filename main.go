@@ -7,11 +7,10 @@ import (
 	"os"
 	"path"
 
-	"github.com/bitrise-io/go-utils/pathutil"
-
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/log"
+	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-tools/go-steputils/stepconf"
 	_ "github.com/lib/pq"
 )
@@ -69,8 +68,18 @@ func connectToDB(dbInfo dbInfo) (*sql.DB, error) {
 func runSQLStatement(db *sql.DB, statement string) error {
 	rows, err := db.Query(statement)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to query statement, error: %s", err)
 	}
+
+	columnTypes, err := rows.ColumnTypes()
+	if err != nil {
+		return fmt.Errorf("failed to get column types, error: %s", err)
+	}
+	types := []string{}
+	for _, cType := range columnTypes {
+		types = append(types, fmt.Sprintf("%s %s", cType.Name(), cType.DatabaseTypeName()))
+	}
+	log.Printf("%s", types)
 
 	cols, err := rows.Columns()
 	if err != nil {
@@ -100,7 +109,7 @@ func runSQLStatement(db *sql.DB, statement string) error {
 			}
 		}
 
-		fmt.Printf("%#v\n", result)
+		log.Printf("%#v\n", result)
 	}
 
 	return nil
@@ -132,14 +141,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 	scripts := []string{}
 	for _, entry := range entries {
 		if !entry.IsDir() && path.Ext(entry.Name()) == ".SQL" {
 			scripts = append(scripts, path.Join(scripsDir, entry.Name()))
 		}
 	}
-
 	log.Printf("Scripts to run: %s", scripts)
 
 	// Connect to DB
@@ -162,17 +169,24 @@ func main() {
 	}()
 
 	for _, script := range scripts {
+		fmt.Println()
+		log.Infof("Preparing to run script: %s", path.Base(script))
+
 		file, err := os.Open(script)
 		if err != nil {
-			panic(fmt.Errorf("failed to open file, error: %s", err))
+			panic(fmt.Errorf("failed to open file: %s, error: %s", script, err))
 		}
+
 		sqlStatement, err := ioutil.ReadAll(file)
 		if err != nil {
-			panic(fmt.Errorf("failed to read file content, error: %s", err))
+			panic(fmt.Errorf("failed to read content, file: %s, error: %s", script, err))
 		}
+
 		err = runSQLStatement(db, string(sqlStatement))
 		if err != nil {
 			log.Warnf("failed to run script: %s, error: %s", script, err)
 		}
+
+		log.Infof("Done with script: %s", path.Base(script))
 	}
 }
