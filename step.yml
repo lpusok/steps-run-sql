@@ -52,11 +52,11 @@ inputs:
       description: |
         DB sslmode
       is_required: true
-  - scripts_repository:
+  - scripts_dir:
     opts:
-      title: "Data scripts repository"
+      title: "Data scripts directory"
       description: |
-        Data scripts repository
+        Data scripts directory
       is_required: true
 
 

@@ -7,6 +7,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/bitrise-io/go-utils/pathutil"
+
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/log"
@@ -105,13 +107,13 @@ func runSQLStatement(db *sql.DB, statement string) error {
 }
 
 type config struct {
-	DbHost            string          `env:"db_host,required"`
-	DbPort            int             `env:"db_port,required"`
-	DbUsername        string          `env:"db_username,required"`
-	DbPassword        stepconf.Secret `env:"db_password"`
-	DbName            string          `env:"db_name,required"`
-	DbSSLmode         string          `env:"db_sslmode,required"`
-	ScriptsRepository string          `env:"scripts_repository,required"`
+	DbHost     string          `env:"db_host,required"`
+	DbPort     int             `env:"db_port,required"`
+	DbUsername string          `env:"db_username,required"`
+	DbPassword stepconf.Secret `env:"db_password"`
+	DbName     string          `env:"db_name,required"`
+	DbSSLmode  string          `env:"db_sslmode,required"`
+	ScriptsDir string          `env:"scripts_dir,dir"`
 }
 
 func main() {
@@ -121,12 +123,10 @@ func main() {
 	}
 	stepconf.Print(cfg)
 
-	// Clone data scripts repo
-	dir, err := cloneRepo(cfg.ScriptsRepository)
+	scripsDir, err := pathutil.AbsPath(cfg.ScriptsDir)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to convert to absolute dir, error: %s", err))
 	}
-	scripsDir := path.Join(dir, "scripts")
 
 	entries, err := ioutil.ReadDir(scripsDir)
 	if err != nil {

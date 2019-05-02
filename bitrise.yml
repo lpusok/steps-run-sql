@@ -19,4 +19,4 @@ workflows:
         - db_password: $PASSWORD
         - db_name: $DBNAME
         - db_sslmode: $DBSSLMODE
-        - scripts_repository: $SCRIPTS_REPO
+        - scripts_dir: $SCRIPTS_DIR
