@@ -154,6 +154,7 @@ func main() {
 		}
 	}()
 
+	failure := false
 	for _, script := range scripts {
 		fmt.Println()
 		log.Infof("Preparing to run script: %s", path.Base(script))
@@ -171,9 +172,14 @@ func main() {
 
 		err = runSQLStatement(db, string(sqlStatements))
 		if err != nil {
+			failure = true
 			log.Warnf("failed to run script: %s, error: %s", script, err)
 		}
 
 		log.Infof("Done with script: %s", path.Base(script))
+	}
+
+	if failure {
+		panic("One or more scripts failed.")
 	}
 }
