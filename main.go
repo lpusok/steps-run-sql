@@ -185,9 +185,9 @@ func main() {
 	for _, script := range scripts {
 		tree, err := pg_query.ParseToJSON(script.content)
 		if err != nil {
-			panic(fmt.Errorf("failed to validate script: %s, content: %s", script.path, script.content))
+			panic(fmt.Errorf("failed to validate script, error: %s, path: %s, content: %s", err, script.path, script.content))
 		}
-		fmt.Printf("%s\n", tree)
+		log.Debugf("%s\n", tree)
 	}
 
 	// Execute queries
