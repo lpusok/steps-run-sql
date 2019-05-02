@@ -72,52 +72,57 @@ func runSQLStatement(db *sql.DB, statement string) error {
 		return fmt.Errorf("failed to query statement, error: %s", err)
 	}
 
-	columnTypes, err := rows.ColumnTypes()
-	if err != nil {
-		return fmt.Errorf("failed to get column types, error: %s", err)
-	}
-	types := []string{}
-	for _, cType := range columnTypes {
-		types = append(types, fmt.Sprintf("%s", cType.Name()))
-	}
-
-	cols, err := rows.Columns()
-	if err != nil {
-		return fmt.Errorf("failed to get columns, error :%s", err)
-	}
-
-	allResults := [][]string{}
-
-	// Result is your slice string.
-	rawResult := make([][]byte, len(cols))
-	dest := make([]interface{}, len(cols)) // A temporary interface{} slice
-	for i := range rawResult {
-		dest[i] = &rawResult[i] // Put pointers to each string in the interface slice
-	}
-
-	for rows.Next() {
-		err = rows.Scan(dest...)
+	for {
+		columnTypes, err := rows.ColumnTypes()
 		if err != nil {
-			return fmt.Errorf("failed to scan row, error: %s", err)
+			return fmt.Errorf("failed to get column types, error: %s", err)
+		}
+		types := []string{}
+		for _, cType := range columnTypes {
+			types = append(types, fmt.Sprintf("%s", cType.Name()))
 		}
 
-		result := make([]string, len(cols))
-		for i, raw := range rawResult {
-			if raw == nil {
-				result[i] = "\\N"
-			} else {
-				result[i] = string(raw)
+		cols, err := rows.Columns()
+		if err != nil {
+			return fmt.Errorf("failed to get columns, error :%s", err)
+		}
+
+		allResults := [][]string{}
+
+		// Result is your slice string.
+		rawResult := make([][]byte, len(cols))
+		dest := make([]interface{}, len(cols)) // A temporary interface{} slice
+		for i := range rawResult {
+			dest[i] = &rawResult[i] // Put pointers to each string in the interface slice
+		}
+
+		for rows.Next() {
+			err = rows.Scan(dest...)
+			if err != nil {
+				return fmt.Errorf("failed to scan row, error: %s", err)
 			}
+
+			result := make([]string, len(cols))
+			for i, raw := range rawResult {
+				if raw == nil {
+					result[i] = "\\N"
+				} else {
+					result[i] = string(raw)
+				}
+			}
+
+			allResults = append(allResults, result)
 		}
 
-		allResults = append(allResults, result)
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetHeader(types)
+		table.AppendBulk(allResults)
+		table.Render()
+
+		if !rows.NextResultSet() {
+			break
+		}
 	}
-
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader(types)
-	table.AppendBulk(allResults)
-	table.Render()
-
 	return nil
 }
 
@@ -183,12 +188,13 @@ func main() {
 			panic(fmt.Errorf("failed to open file: %s, error: %s", script, err))
 		}
 
-		sqlStatement, err := ioutil.ReadAll(file)
+		sqlStatements, err := ioutil.ReadAll(file)
 		if err != nil {
 			panic(fmt.Errorf("failed to read content, file: %s, error: %s", script, err))
 		}
+		log.Printf("Script content: %s", sqlStatements)
 
-		err = runSQLStatement(db, string(sqlStatement))
+		err = runSQLStatement(db, string(sqlStatements))
 		if err != nil {
 			log.Warnf("failed to run script: %s, error: %s", script, err)
 		}
