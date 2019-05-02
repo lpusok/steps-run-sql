@@ -80,7 +80,7 @@ func runSQLStatement(db *sql.DB, statement string) error {
 			result := make([]string, len(cols))
 			for i, raw := range rawResult {
 				if raw == nil {
-					result[i] = "\\N"
+					result[i] = ""
 				} else {
 					result[i] = string(raw)
 				}
@@ -93,6 +93,7 @@ func runSQLStatement(db *sql.DB, statement string) error {
 		table.SetHeader(types)
 		table.AppendBulk(allResults)
 		table.Render()
+		log.Printf("Rows: %d", len(allResults))
 
 		if !rows.NextResultSet() {
 			break
@@ -168,7 +169,7 @@ func main() {
 		if err != nil {
 			panic(fmt.Errorf("failed to read content, file: %s, error: %s", script, err))
 		}
-		log.Printf("Script content: %s", sqlStatements)
+		log.Printf("Script content:\n%s", sqlStatements)
 
 		err = runSQLStatement(db, string(sqlStatements))
 		if err != nil {
