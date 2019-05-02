@@ -64,38 +64,42 @@ func connectToDB() (*sql.DB, error) {
 }
 
 func runSQLStatement(db *sql.DB, statement string) error {
-	_, err := db.Exec(statement)
+	rows, err := db.Query(statement)
 	if err != nil {
 		return err
 	}
-	return nil
-}
 
-func testQuery(db *sql.DB) error {
-	type Table struct {
-		schemaname  string
-		tablename   string
-		tableowner  string
-		tablespace  *string
-		hasindexes  bool
-		hasrules    bool
-		hastriggers bool
-		rowsecurity bool
+	cols, err := rows.Columns()
+	if err != nil {
+		return fmt.Errorf("failed to get columns, error :%s", err)
 	}
-	sqlStatement := `SELECT * FROM pg_catalog.pg_tables;`
-	var table Table
-	row := db.QueryRow(sqlStatement)
-	err := row.Scan(&table.schemaname, &table.tablename, &table.tableowner, &table.tablespace,
-		&table.hasindexes, &table.hasrules, &table.hastriggers, &table.rowsecurity)
-	switch err {
-	case sql.ErrNoRows:
-		log.Printf("No rows were returned!")
-		return nil
-	case nil:
-		log.Printf("%v", table)
-	default:
-		return err
+
+	// Result is your slice string.
+	rawResult := make([][]byte, len(cols))
+	result := make([]string, len(cols))
+
+	dest := make([]interface{}, len(cols)) // A temporary interface{} slice
+	for i := range rawResult {
+		dest[i] = &rawResult[i] // Put pointers to each string in the interface slice
 	}
+
+	for rows.Next() {
+		err = rows.Scan(dest...)
+		if err != nil {
+			return fmt.Errorf("Failed to scan row, error: %s", err)
+		}
+
+		for i, raw := range rawResult {
+			if raw == nil {
+				result[i] = "\\N"
+			} else {
+				result[i] = string(raw)
+			}
+		}
+
+		fmt.Printf("%#v\n", result)
+	}
+
 	return nil
 }
 
@@ -132,11 +136,6 @@ func main() {
 			log.Warnf("failed to close DB")
 		}
 	}()
-
-	err = testQuery(db)
-	if err != nil {
-		log.Warnf("failed to list tables, error: %s", err)
-	}
 
 	for _, script := range scripts {
 		file, err := os.Open(script)
