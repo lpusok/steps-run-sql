@@ -7,37 +7,12 @@ import (
 	"os"
 	"path"
 
-	"github.com/bitrise-io/go-utils/command/git"
-	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-tools/go-steputils/stepconf"
 	_ "github.com/lib/pq"
 	"github.com/olekukonko/tablewriter"
 )
-
-func cloneRepo(scriptsRepository string) (string, error) {
-	dir, err := ioutil.TempDir("", "")
-	if err != nil {
-		return "", fmt.Errorf("failed to create temp dir")
-	}
-	log.Printf("cloning into: %s\n", dir)
-
-	repo, err := git.New(dir)
-	if err != nil {
-		return "", fmt.Errorf("failed to create repository")
-	}
-	command := repo.Clone(scriptsRepository)
-
-	out, err := command.RunAndReturnTrimmedCombinedOutput()
-	if err != nil {
-		if errorutil.IsExitStatusError(err) {
-			return "", fmt.Errorf("failed to clone repo, output: %s", out)
-		}
-		return "", fmt.Errorf("failed to execute clone command, error: %s", err)
-	}
-	return dir, nil
-}
 
 type dbInfo struct {
 	host         string
@@ -79,7 +54,7 @@ func runSQLStatement(db *sql.DB, statement string) error {
 		}
 		types := []string{}
 		for _, cType := range columnTypes {
-			types = append(types, fmt.Sprintf("%s", cType.Name()))
+			types = append(types, cType.Name())
 		}
 
 		cols, err := rows.Columns()

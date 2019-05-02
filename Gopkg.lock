@@ -3,13 +3,10 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a013ba1bd88d8b2b6b14e973f663d086827e0dc9d265992f7ae6039e6a233a86"
+  digest = "1:efcceb975070e97d62096cf87a3e82c1da8c0900adc5ff8e071f22b98ed969f0"
   name = "github.com/bitrise-io/go-utils"
   packages = [
     "colorstring",
-    "command",
-    "command/git",
-    "errorutil",
     "log",
     "parseutil",
     "pathutil",
@@ -58,8 +55,6 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/bitrise-io/go-utils/command/git",
-    "github.com/bitrise-io/go-utils/errorutil",
     "github.com/bitrise-io/go-utils/log",
     "github.com/bitrise-io/go-utils/pathutil",
     "github.com/bitrise-tools/go-steputils/stepconf",
