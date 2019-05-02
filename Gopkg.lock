@@ -24,6 +24,18 @@
   revision = "cecc766da84859e37e780d9d1c416f0f3993e6b1"
 
 [[projects]]
+  digest = "1:50939c5220e58892e188111e79d101394b4cd1bd600b5aa74d21dae72f533b8e"
+  name = "github.com/lfittl/pg_query_go"
+  packages = [
+    ".",
+    "nodes",
+    "parser",
+  ]
+  pruneopts = "UT"
+  revision = "dfcaf527490fbd116d6fed73380bc2c338db2362"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:bc1c0be40c67b6b4aee09d7508d5a2a52c1c116b1fa43806dad2b0d6b4d4003b"
   name = "github.com/lib/pq"
   packages = [
@@ -58,6 +70,7 @@
     "github.com/bitrise-io/go-utils/log",
     "github.com/bitrise-io/go-utils/pathutil",
     "github.com/bitrise-tools/go-steputils/stepconf",
+    "github.com/lfittl/pg_query_go",
     "github.com/lib/pq",
     "github.com/olekukonko/tablewriter",
   ]

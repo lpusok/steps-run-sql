@@ -11,6 +11,7 @@ import (
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-tools/go-steputils/stepconf"
+	pg_query "github.com/lfittl/pg_query_go"
 	_ "github.com/lib/pq"
 	"github.com/olekukonko/tablewriter"
 )
@@ -161,6 +162,7 @@ func main() {
 		content string
 	}
 
+	// Read script contents
 	scripts := make([]script, len(scriptFiles))
 	for i, path := range scriptFiles {
 		file, err := os.Open(path)
@@ -179,6 +181,16 @@ func main() {
 		}
 	}
 
+	// Validate queries
+	for _, script := range scripts {
+		tree, err := pg_query.ParseToJSON(script.content)
+		if err != nil {
+			panic(fmt.Errorf("failed to validate script: %s, content: %s", script.path, script.content))
+		}
+		fmt.Printf("%s\n", tree)
+	}
+
+	// Execute queries
 	failure := false
 	for _, script := range scripts {
 		fmt.Println()
