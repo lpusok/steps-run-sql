@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -130,7 +131,7 @@ func main() {
 	}
 	scripts := []string{}
 	for _, entry := range entries {
-		if !entry.IsDir() && path.Ext(entry.Name()) == ".SQL" {
+		if !entry.IsDir() && path.Ext(strings.ToLower(entry.Name())) == ".sql" {
 			scripts = append(scripts, path.Join(scripsDir, entry.Name()))
 		}
 	}
