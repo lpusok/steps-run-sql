@@ -10,20 +10,21 @@ import (
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/errorutil"
 	"github.com/bitrise-io/go-utils/log"
+	"github.com/bitrise-tools/go-steputils/stepconf"
 	_ "github.com/lib/pq"
 )
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "lpusok"
-	password = ""
-	dbname   = "template1"
+// const (
+// 	host     = "localhost"
+// 	port     = 5432
+// 	user     = "lpusok"
+// 	password = ""
+// 	dbname   = "template1"
 
-	scriptsRepo = "git@github.com:lpusok/hackathon-data-scripts.git"
-)
+// 	scriptsRepo = "git@github.com:lpusok/hackathon-data-scripts.git"
+// )
 
-func cloneRepo() (string, error) {
+func cloneRepo(scriptsRepository string) (string, error) {
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temp dir")
@@ -34,7 +35,7 @@ func cloneRepo() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to create repository")
 	}
-	command := repo.Clone(scriptsRepo)
+	command := repo.Clone(scriptsRepository)
 
 	out, err := command.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
@@ -46,10 +47,18 @@ func cloneRepo() (string, error) {
 	return dir, nil
 }
 
-func connectToDB() (*sql.DB, error) {
+type dbInfo struct {
+	host         string
+	port         int
+	username     string
+	password     string
+	databaseName string
+}
+
+func connectToDB(dbInfo dbInfo) (*sql.DB, error) {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+		dbInfo.host, dbInfo.port, dbInfo.username, dbInfo.password, dbInfo.databaseName)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		return nil, err
@@ -86,7 +95,7 @@ func runSQLStatement(db *sql.DB, statement string) error {
 	for rows.Next() {
 		err = rows.Scan(dest...)
 		if err != nil {
-			return fmt.Errorf("Failed to scan row, error: %s", err)
+			return fmt.Errorf("failed to scan row, error: %s", err)
 		}
 
 		for i, raw := range rawResult {
@@ -103,9 +112,24 @@ func runSQLStatement(db *sql.DB, statement string) error {
 	return nil
 }
 
+type config struct {
+	DbHost            string          `env:"db_host,required"`
+	DbPort            int             `env:"db_port,required"`
+	DbUsername        string          `env:"db_username,required"`
+	DbPassword        stepconf.Secret `env:"db_password"`
+	DbName            string          `env:"db_name,required"`
+	ScriptsRepository string          `env:"scripts_repository,required"`
+}
+
 func main() {
+	var cfg config
+	if err := stepconf.Parse(&cfg); err != nil {
+		panic(fmt.Errorf("could not create config: %s", err))
+	}
+	stepconf.Print(cfg)
+
 	// Clone data scripts repo
-	dir, err := cloneRepo()
+	dir, err := cloneRepo(cfg.ScriptsRepository)
 	if err != nil {
 		panic(err)
 	}
@@ -126,7 +150,13 @@ func main() {
 	log.Printf("Scripts to run: %s", scripts)
 
 	// Connect to DB
-	db, err := connectToDB()
+	db, err := connectToDB(dbInfo{
+		host:         cfg.DbHost,
+		port:         cfg.DbPort,
+		username:     cfg.DbUsername,
+		password:     string(cfg.DbPassword),
+		databaseName: cfg.DbName,
+	})
 	if err != nil {
 		panic(err)
 	}

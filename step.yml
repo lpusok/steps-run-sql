@@ -1,0 +1,56 @@
+title: Run SQL scripts
+summary: Run SQL scripts
+description: |
+  Run SQL scripts
+website: https://github.com/lpusok/steps-run-sql
+source_code_url: https://github.com/lpusok/steps-run-sql
+support_url: https://github.com/lpusok/steps-run-sql/issues
+type_tags:
+  - utility
+is_requires_admin_user: true
+is_always_run: false
+is_skippable: false
+run_if: ""
+toolkit:
+  go:
+    package_name: github.com/lpusok/steps-run-sql
+inputs:
+  - db_host:
+    opts:
+      title: "DB host URL"
+      description: |
+        DB host URL
+      is_required: true
+  - db_port:
+    opts:
+      title: "DB port"
+      description: |
+        DB port
+      is_required: true
+  - db_username:
+    opts:
+      title: "DB username"
+      description: |
+        DB username
+      is_required: true
+  - db_password:
+    opts:
+      title: "DB password"
+      description: |
+        DB password
+      is_required: true
+      is_sensitive: true
+  - db_name:
+    opts:
+      title: "DB name"
+      description: |
+        DB name
+      is_required: true
+  - scripts_repository:
+    opts:
+      title: "Data scripts repository"
+      description: |
+        Data scripts repository
+      is_required: true
+
+

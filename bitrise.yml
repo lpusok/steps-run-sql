@@ -1,0 +1,28 @@
+format_version: "7"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  test:
+    envs:
+    - HOST: "localhost"
+    - PORT: "5432"
+    - USERNAME: "lpusok"
+    - PASSWORD: ""
+    - DBNAME: "template1"
+    - SCRIPTS_REPO: "git@github.com:lpusok/hackathon-data-scripts.git"
+    steps:
+    - script:
+        inputs:
+        - content: stepman audit --step-yml ./step.yml
+    - go-list:
+    - golint:
+    - errcheck:
+    - go-test:
+    - path::./:
+        inputs:
+        - db_host: $HOST
+        - db_port: $PORT
+        - db_username: $USERNAME
+        - db_password: $PASSWORD
+        - db_name: $DBNAME
+        - scripts_repository: $SCRIPTS_REPO
