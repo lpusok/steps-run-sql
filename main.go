@@ -13,6 +13,7 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-tools/go-steputils/stepconf"
 	_ "github.com/lib/pq"
+	"github.com/olekukonko/tablewriter"
 )
 
 func cloneRepo(scriptsRepository string) (string, error) {
@@ -77,19 +78,18 @@ func runSQLStatement(db *sql.DB, statement string) error {
 	}
 	types := []string{}
 	for _, cType := range columnTypes {
-		types = append(types, fmt.Sprintf("%s %s", cType.Name(), cType.DatabaseTypeName()))
+		types = append(types, fmt.Sprintf("%s", cType.Name()))
 	}
-	log.Printf("%s", types)
 
 	cols, err := rows.Columns()
 	if err != nil {
 		return fmt.Errorf("failed to get columns, error :%s", err)
 	}
 
+	allResults := [][]string{}
+
 	// Result is your slice string.
 	rawResult := make([][]byte, len(cols))
-	result := make([]string, len(cols))
-
 	dest := make([]interface{}, len(cols)) // A temporary interface{} slice
 	for i := range rawResult {
 		dest[i] = &rawResult[i] // Put pointers to each string in the interface slice
@@ -101,6 +101,7 @@ func runSQLStatement(db *sql.DB, statement string) error {
 			return fmt.Errorf("failed to scan row, error: %s", err)
 		}
 
+		result := make([]string, len(cols))
 		for i, raw := range rawResult {
 			if raw == nil {
 				result[i] = "\\N"
@@ -109,8 +110,13 @@ func runSQLStatement(db *sql.DB, statement string) error {
 			}
 		}
 
-		log.Printf("%#v\n", result)
+		allResults = append(allResults, result)
 	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader(types)
+	table.AppendBulk(allResults)
+	table.Render()
 
 	return nil
 }
